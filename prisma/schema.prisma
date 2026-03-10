@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Tablas de Autenticación (Requeridas por Better Auth) ---
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  image         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  // Campo de Rol personalizado para la prueba
+  role          String     @default("ADMIN") 
+  
+  // Relaciones
+  sessions      Session[]
+  accounts      Account[]
+  movements     Movement[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // ESTOS CAMPOS FALTABAN Y CAUSAN EL ERROR:
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+// --- Tabla de Negocio (Gestión de Ingresos y Egresos) ---
+
+model Movement {
+  id        String   @id @default(cuid())
+  concept   String
+  amount    Float
+  date      DateTime @default(now())
+  type      String   // "INCOME" o "EXPENSE"
+  
+  // Relación con el usuario que creó el movimiento
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("movement")
+}
