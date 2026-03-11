@@ -10,8 +10,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await auth.api.getSession({ headers: reqHeaders });
     const user = session?.user as any;
 
+    // Protección de Backend: Solo ADMIN entra
     if (!session || user?.role !== "ADMIN") {
-        return res.status(403).json({ error: "Acceso denegado" });
+        return res.status(403).json({ error: "No autorizado" });
     }
 
     // GET: Listar usuarios
@@ -26,6 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // PUT: Editar usuario (Nombre y Rol)
     if (req.method === "PUT") {
         const { id, name, role } = req.body;
+        if (!id || !name || !role) {
+            return res.status(400).json({ error: "Faltan campos" });
+        }
         try {
             const updated = await prisma.user.update({
                 where: { id },
@@ -33,9 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
             return res.status(200).json(updated);
         } catch (error) {
-            return res.status(500).json({ error: "Error al actualizar usuario" });
+            return res.status(500).json({ error: "Error al actualizar" });
         }
     }
 
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Método no permitido" });
 }

@@ -1,35 +1,70 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma, auth } from "@/lib/auth";
+import { PrismaClient } from "@prisma/client";
+import { auth } from "@/lib/auth";
+
+const prisma = new PrismaClient();
+
+/**
+ * @openapi
+ * /api/movements:
+ * get:
+ * description: Obtiene la lista de movimientos financieros (Todos los roles)
+ * post:
+ * description: Crea un nuevo movimiento (Solo ADMIN)
+ */
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await auth.api.getSession({ headers: new Headers(req.headers as any) });
-  if (!session) return res.status(401).json({ error: "No autorizado" });
-  const user = session.user as any;
-
-  if (req.method === "GET") {
-    const movements = await prisma.movement.findMany({
-      include: { user: { select: { name: true } } },
-      orderBy: { date: 'desc' }
+    const session = await auth.api.getSession({ 
+        headers: new Headers(req.headers as any) 
     });
-    return res.status(200).json(movements);
-  }
-
-  if (req.method === "POST") {
-    if (user.role !== "ADMIN") return res.status(403).json({ error: "Solo administradores pueden crear" });
-    const { concept, amount, date } = req.body;
-    const numAmount = parseFloat(amount);
     
-    const movement = await prisma.movement.create({
-      data: {
-        concept,
-        amount: numAmount,
-        date: new Date(date),
-        type: numAmount >= 0 ? "INCOME" : "EXPENSE",
-        userId: user.id
-      }
-    });
-    return res.status(201).json(movement);
-  }
+    // Protección de Backend: No autenticado = 401
+    if (!session) {
+        return res.status(401).json({ error: "No autorizado" });
+    }
 
-  return res.status(405).end();
+    // GET: Leer todos los movimientos (Para todos los roles)
+    if (req.method === "GET") {
+        try {
+            const movements = await prisma.movement.findMany({
+                include: { user: { select: { name: true } } }, // Trae el nombre del usuario
+                orderBy: { date: 'desc' }
+            });
+            return res.status(200).json(movements);
+        } catch (error) {
+            return res.status(500).json({ error: "Error al obtener movimientos" });
+        }
+    }
+
+    // POST: Crear nuevo movimiento (Solo ADMIN)
+    if (req.method === "POST") {
+        const user = session.user as any;
+        if (user.role !== "ADMIN") {
+            return res.status(403).json({ error: "Privilegios insuficientes (Solo ADMIN)" });
+        }
+
+        const { concept, amount, date, type } = req.body;
+
+        // Validación de Backend
+        if (!concept || !amount || !date) {
+            return res.status(400).json({ error: "Faltan campos obligatorios" });
+        }
+
+        try {
+            const newMovement = await prisma.movement.create({
+                data: {
+                    concept,
+                    amount: parseFloat(amount),
+                    date: new Date(date),
+                    type: type || (parseFloat(amount) >= 0 ? "INCOME" : "EXPENSE"),
+                    userId: session.user.id // Usuario que crea
+                }
+            });
+            return res.status(201).json(newMovement);
+        } catch (error) {
+            return res.status(500).json({ error: "Error al crear el movimiento" });
+        }
+    }
+
+    return res.status(405).json({ error: "Método no permitido" });
 }

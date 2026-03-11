@@ -1,43 +1,41 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Edit, Users, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Edit2, Users, ShieldCheck, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function UsuariosPage() {
     const [users, setUsers] = useState<any[]>([]);
-    const [editingUser, setEditingUser] = useState<any>(null);
-    const [newName, setNewName] = useState("");
-    const [newRole, setNewRole] = useState("");
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [open, setOpen] = useState(false);
 
-    const fetchUsers = async () => {
-        const res = await fetch("/api/users");
-        const data = await res.json();
-        if (Array.isArray(data)) setUsers(data);
+    const fetchUsers = () => {
+        fetch("/api/users").then(res => res.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
     };
 
     useEffect(() => { fetchUsers(); }, []);
 
-    const handleEditClick = (user: any) => {
-        setEditingUser(user);
-        setNewName(user.name);
-        setNewRole(user.role);
-    };
-
-    const handleUpdate = async () => {
+    const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
         const res = await fetch("/api/users", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: editingUser.id, name: newName, role: newRole })
+            body: JSON.stringify({
+                id: selectedUser.id,
+                name: formData.get("name"),
+                role: formData.get("role")
+            })
         });
 
         if (res.ok) {
-            toast.success("Usuario actualizado correctamente");
-            setEditingUser(null);
+            toast.success("Usuario actualizado con éxito");
+            setOpen(false);
             fetchUsers();
         } else {
             toast.error("Error al actualizar");
@@ -46,76 +44,81 @@ export default function UsuariosPage() {
 
     return (
         <ProtectedRoute adminOnly>
-            <div className="min-h-screen bg-[#f8fafc]">
+            {/* 🔧 Forzar color de texto base oscuro */}
+            <div className="min-h-screen bg-[#f8fafc] text-slate-900">
                 <Navbar />
                 <main className="max-w-6xl mx-auto p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <Users className="w-8 h-8 text-blue-600" />
-                        <h1 className="text-3xl font-bold text-slate-900">Gestión de Usuarios</h1>
+                    <div className="mb-10">
+                        <h2 className="text-3xl font-extrabold text-slate-950 flex items-center gap-3">
+                            <Users className="text-indigo-600 w-9 h-9" /> Administración de Personal
+                        </h2>
+                        <p className="text-slate-600 mt-2">Administra los roles y permisos de acceso.</p>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Tabla Corregida (Visibilidad) */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ring-1 ring-slate-200/50">
                         <Table>
-                            <TableHeader className="bg-slate-50">
+                            <TableHeader className="bg-slate-50/80">
                                 <TableRow>
-                                    <TableHead>Nombre</TableHead>
-                                    <TableHead>Correo Electrónico</TableHead>
-                                    <TableHead>Rol</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
+                                    {/* 🔧 Forzar color oscuro en los encabezados */}
+                                    <TableHead className="font-semibold text-slate-900 py-4">Nombre Completo</TableHead>
+                                    <TableHead className="font-semibold text-slate-900 flex items-center gap-2"><Mail className="w-4 h-4 text-slate-400"/> Correo</TableHead>
+                                    <TableHead className="font-semibold text-slate-900">Rol Sistema</TableHead>
+                                    <TableHead className="font-semibold text-slate-900 text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {users.map((u) => (
-                                    <TableRow key={u.id} className="hover:bg-slate-50/50">
-                                        <TableCell className="font-medium">{u.name}</TableCell>
-                                        <TableCell>{u.email}</TableCell>
+                                    <TableRow key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                                        {/* 🔧 Forzar color oscuro en las celdas */}
+                                        <TableCell className="font-semibold text-slate-800 py-4">{u.name}</TableCell>
+                                        <TableCell className="text-slate-600">{u.email}</TableCell>
                                         <TableCell>
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                {u.role}
-                                            </span>
+                                            {u.role === "ADMIN" ? (
+                                                <Badge className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100 flex w-fit items-center gap-1 shadow-none">
+                                                    <ShieldCheck className="w-3.5 h-3.5" /> {u.role}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-slate-600 border-slate-200">
+                                                    {u.role}
+                                                </Badge>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(u)}>
-                                                <Edit className="w-4 h-4 mr-2" /> Editar
-                                            </Button>
+                                            {/* Requisito: Formulario de edición */}
+                                            <Dialog open={open && selectedUser?.id === u.id} onOpenChange={(val) => {setOpen(val); if(val) setSelectedUser(u)}}>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="ghost" size="sm" className="text-slate-700 hover:bg-indigo-50 hover:text-indigo-600">
+                                                        <Edit2 className="w-4 h-4 mr-2" /> Editar Permisos
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-[425px]">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Actualizar Usuario</DialogTitle>
+                                                    </DialogHeader>
+                                                    <form onSubmit={handleUpdate} className="space-y-4 pt-4">
+                                                        <div className="space-y-2">
+                                                            <label className="text-sm font-semibold text-slate-700">Nombre Completo</label>
+                                                            <Input name="name" defaultValue={u.name} required className="text-slate-900"/>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="text-sm font-semibold text-slate-700">Asignar Rol</label>
+                                                            {/* select estándar para mayor legibilidad */}
+                                                            <select name="role" defaultValue={u.role} className="w-full border rounded-md p-2 bg-white text-slate-900 text-sm">
+                                                                <option value="USER">USER</option>
+                                                                <option value="ADMIN">ADMIN</option>
+                                                            </select>
+                                                        </div>
+                                                        <Button type="submit" className="w-full bg-indigo-600 text-lg">Guardar Cambios</Button>
+                                                    </form>
+                                                </DialogContent>
+                                            </Dialog>
                                         </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     </div>
-
-                    {/* Modal de Edición */}
-                    <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-                        <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <Shield className="w-5 h-5 text-blue-600" /> Editar Permisos
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Nombre Completo</label>
-                                    <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Asignar Rol</label>
-                                    <select 
-                                        className="w-full h-10 px-3 rounded-md border border-slate-200 bg-white text-sm"
-                                        value={newRole} 
-                                        onChange={(e) => setNewRole(e.target.value)}
-                                    >
-                                        <option value="USER">Usuario (Solo consulta)</option>
-                                        <option value="ADMIN">Administrador (Control total)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setEditingUser(null)}>Cancelar</Button>
-                                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleUpdate}>Guardar Cambios</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                 </main>
             </div>
         </ProtectedRoute>
