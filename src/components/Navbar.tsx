@@ -24,7 +24,6 @@ export function Navbar() {
     return <nav className="p-4 bg-white border-b shadow-sm h-[73px]"></nav>;
   }
 
-  // Obtener inicial para el avatar
   const initial = user?.name?.charAt(0).toUpperCase() || "U";
 
   return (
@@ -54,7 +53,6 @@ export function Navbar() {
           <span className="text-[10px] text-slate-500">{user?.email}</span>
         </div>
         
-        {/* Avatar Circular */}
         <div className="w-9 h-9 bg-slate-200 border border-slate-300 rounded-full flex items-center justify-center font-bold text-slate-600 shadow-sm">
           {initial}
         </div>

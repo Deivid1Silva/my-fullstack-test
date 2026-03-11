@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { name: "Egresos", value: egresos, fill: "#ef4444" }
         ];
 
-        // El saldo es la suma algebraica
+
         const balance = ingresos - egresos;
 
         return res.status(200).json({ stats, balance });

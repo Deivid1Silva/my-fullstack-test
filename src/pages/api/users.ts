@@ -10,12 +10,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await auth.api.getSession({ headers: reqHeaders });
     const user = session?.user as any;
 
-    // Protección de Backend: Solo ADMIN entra
+
     if (!session || user?.role !== "ADMIN") {
         return res.status(403).json({ error: "No autorizado" });
     }
 
-    // GET: Listar usuarios
+
     if (req.method === "GET") {
         const users = await prisma.user.findMany({
             select: { id: true, name: true, email: true, role: true, createdAt: true },
@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(users);
     }
 
-    // PUT: Editar usuario (Nombre y Rol)
+
     if (req.method === "PUT") {
         const { id, name, role } = req.body;
         if (!id || !name || !role) {

@@ -2,7 +2,6 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 
-// Patrón Singleton para Prisma: Evita errores de inicialización en desarrollo
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
@@ -17,7 +16,6 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    // SOLUCIÓN AL CORS: Definimos los dominios en los que confiamos
     trustedOrigins: [
         "https://my-fullstack-test-three.vercel.app",
         "https://my-fullstack-test-deivid1silvas-projects.vercel.app"
@@ -28,7 +26,6 @@ export const auth = betterAuth({
             clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
         },
     },
-    // Configuración de campos adicionales para cumplir con el requerimiento de ADMIN por defecto
     user: {
         additionalFields: {
             role: {

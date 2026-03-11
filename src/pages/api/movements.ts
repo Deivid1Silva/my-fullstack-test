@@ -18,16 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         headers: new Headers(req.headers as any) 
     });
     
-    // Protección de Backend: No autenticado = 401
     if (!session) {
         return res.status(401).json({ error: "No autorizado" });
     }
 
-    // GET: Leer todos los movimientos (Para todos los roles)
     if (req.method === "GET") {
         try {
             const movements = await prisma.movement.findMany({
-                include: { user: { select: { name: true } } }, // Trae el nombre del usuario
+                include: { user: { select: { name: true } } },
                 orderBy: { date: 'desc' }
             });
             return res.status(200).json(movements);
@@ -36,7 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     }
 
-    // POST: Crear nuevo movimiento (Solo ADMIN)
     if (req.method === "POST") {
         const user = session.user as any;
         if (user.role !== "ADMIN") {
@@ -45,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const { concept, amount, date, type } = req.body;
 
-        // Validación de Backend
         if (!concept || !amount || !date) {
             return res.status(400).json({ error: "Faltan campos obligatorios" });
         }
@@ -57,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     amount: parseFloat(amount),
                     date: new Date(date),
                     type: type || (parseFloat(amount) >= 0 ? "INCOME" : "EXPENSE"),
-                    userId: session.user.id // Usuario que crea
+                    userId: session.user.id 
                 }
             });
             return res.status(201).json(newMovement);

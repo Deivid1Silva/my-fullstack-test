@@ -17,7 +17,7 @@ export function ProtectedRoute({ children, adminOnly = false }: Props) {
       if (!session) {
         router.push("/login");
       } else if (adminOnly && user?.role !== "ADMIN") {
-        router.push("/home"); // Redirigir si no es admin
+        router.push("/home"); 
       }
     }
   }, [session, isPending, router, adminOnly, user]);

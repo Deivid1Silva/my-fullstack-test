@@ -57,7 +57,7 @@ export default function MovimientosPage() {
             <div className="min-h-screen bg-[#f8fafc] text-slate-900">
                 <Navbar />
                 <main className="max-w-6xl mx-auto p-8">
-                    {/* Header Mejorado */}
+                
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                         <div>
                             <h1 className="text-3xl font-extrabold text-slate-950 tracking-tight flex items-center gap-3">
@@ -71,7 +71,7 @@ export default function MovimientosPage() {
                                 <FileDown className="mr-2 h-4 w-4" /> Exportar CSV
                             </Button>
                             
-                            {/* Requisito: Botón "Nuevo" solo para ADMIN */}
+                            
                             {user?.role === "ADMIN" && (
                                 <Dialog open={open} onOpenChange={setOpen}>
                                     <DialogTrigger asChild>
@@ -98,12 +98,12 @@ export default function MovimientosPage() {
                         </div>
                     </div>
 
-                    {/* Tabla Corregida (Requisito y Visibilidad) */}
+                    
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ring-1 ring-slate-200/50">
                         <Table>
                             <TableHeader className="bg-slate-50/80">
                                 <TableRow>
-                                    {/* 🔧 Forzar color oscuro en los encabezados */}
+                                    
                                     <TableHead className="font-semibold text-slate-900 py-4">Concepto</TableHead>
                                     <TableHead className="font-semibold text-slate-900">Tipo</TableHead>
                                     <TableHead className="font-semibold text-slate-900 text-right">Monto</TableHead>
@@ -114,7 +114,7 @@ export default function MovimientosPage() {
                             <TableBody>
                                 {filteredMovements.map((m) => (
                                     <TableRow key={m.id} className="hover:bg-slate-50/50">
-                                        {/* 🔧 Forzar color oscuro en las celdas */}
+                                        
                                         <TableCell className="font-medium text-slate-800 py-4">{m.concept}</TableCell>
                                         <TableCell>
                                             {Number(m.amount) >= 0 ? 
