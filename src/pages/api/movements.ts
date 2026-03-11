@@ -9,69 +9,56 @@ const prisma = new PrismaClient();
  * /api/movements:
  * get:
  * description: Obtiene la lista de movimientos financieros
- * responses:
- * 200:
- * description: Arreglo de movimientos exitoso
  * post:
  * description: Crea un nuevo movimiento (Solo ADMIN)
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * concept:
- * type: string
- * amount:
- * type: number
- * date:
- * type: string
- * type:
- * type: string
- * responses:
- * 201:
- * description: Movimiento creado
- * 403:
- * description: No autorizado
  */
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    // Solución al error de HeadersInit:
     const session = await auth.api.getSession({ 
         headers: new Headers(req.headers as any) 
     });
     
-    if (!session) {
-        return res.status(401).json({ error: "No autorizado" });
-    }
-
-    const user = session.user as any;
+    if (!session) return res.status(401).json({ error: "No autorizado" });
 
     if (req.method === "GET") {
-        const movements = await prisma.movement.findMany({
-            include: { user: true },
-            orderBy: { date: 'desc' }
-        });
-        return res.status(200).json(movements);
+        try {
+            const movements = await prisma.movement.findMany({
+                include: { user: { select: { name: true } } },
+                orderBy: { date: 'desc' }
+            });
+            return res.status(200).json(movements);
+        } catch (error) {
+            return res.status(500).json({ error: "Error al obtener movimientos" });
+        }
     }
 
     if (req.method === "POST") {
-        const { concept, amount, date, type } = req.body;
-        
+        const user = session.user as any;
         if (user.role !== "ADMIN") {
-            return res.status(403).json({ error: "Solo administradores pueden crear registros" });
+            return res.status(403).json({ error: "Privilegios insuficientes" });
         }
 
-        const newMovement = await prisma.movement.create({
-            data: {
-                concept,
-                amount: parseFloat(amount),
-                date: new Date(date),
-                type: type || "INCOME",
-                userId: session.user.id
-            }
-        });
-        return res.status(201).json(newMovement);
+        const { concept, amount, date, type } = req.body;
+
+        if (!concept || !amount || !date) {
+            return res.status(400).json({ error: "Faltan campos obligatorios" });
+        }
+
+        try {
+            const newMovement = await prisma.movement.create({
+                data: {
+                    concept,
+                    amount: parseFloat(amount),
+                    date: new Date(date),
+                    type: type || (parseFloat(amount) >= 0 ? "INCOME" : "EXPENSE"),
+                    userId: session.user.id
+                }
+            });
+            return res.status(201).json(newMovement);
+        } catch (error) {
+            return res.status(500).json({ error: "Error al crear el movimiento" });
+        }
     }
+
+    return res.status(405).json({ error: "Método no permitido" });
 }

@@ -6,23 +6,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         const movements = await prisma.movement.findMany();
+        
+        let ingresos = 0;
+        let egresos = 0;
 
-        const data = [
-            { name: "Ingresos", value: 0, fill: "#22c55e" },
-            { name: "Egresos", value: 0, fill: "#ef4444" },
-        ];
-
-        movements.forEach((m: any) => {
-            const amount = Number(m.amount);
-            if (amount >= 0) {
-                data[0].value += amount;
-            } else {
-                data[1].value += Math.abs(amount);
-            }
+        movements.forEach((m) => {
+            const val = Number(m.amount);
+            if (val >= 0) ingresos += val;
+            else egresos += Math.abs(val);
         });
 
-        return res.status(200).json(data);
+        const stats = [
+            { name: "Ingresos", value: ingresos, fill: "#22c55e" },
+            { name: "Egresos", value: egresos, fill: "#ef4444" }
+        ];
+
+        // El saldo es la suma algebraica
+        const balance = ingresos - egresos;
+
+        return res.status(200).json({ stats, balance });
     } catch (error) {
-        return res.status(500).json({ error: "Error al calcular estadísticas" });
+        return res.status(500).json({ error: "Error en el servidor" });
     }
 }
