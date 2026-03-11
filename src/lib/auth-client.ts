@@ -1,8 +1,8 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    // Agregamos la definición del usuario para que TS no se queje
+    // Cambiamos a la variable que reconoce Better Auth y quitamos el localhost fijo
+    baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL, 
     user: {
         additionalFields: {
             role: {
