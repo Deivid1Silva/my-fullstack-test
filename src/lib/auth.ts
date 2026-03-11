@@ -17,6 +17,11 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
+    // SOLUCIÓN AL CORS: Definimos los dominios en los que confiamos
+    trustedOrigins: [
+        "https://my-fullstack-test-three.vercel.app",
+        "https://my-fullstack-test-deivid1silvas-projects.vercel.app"
+    ],
     socialProviders: {
         github: {
             clientId: process.env.GITHUB_CLIENT_ID as string,
